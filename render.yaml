@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: strikethrough
+    runtime: node
+    plan: free
+    buildCommand: "echo no build"
+    startCommand: node server.js
+    envVars:
+      - key: GEMMA_API_KEY
+        sync: false
+      - key: GEMMA_MODEL
+        value: gemma-3-27b-it
