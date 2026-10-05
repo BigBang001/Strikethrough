@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strikethrough: everything they said, what's still true</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Courier+Prime&family=Playfair+Display:wght@800;900&display=swap">
+<style>
+:root{--paper:#f3ecdc;--ink:#1d1a16;--red:#c62a1e;--rule:#d8cdb4;--mute:#8a8068;--ok:#2f6b3a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.55 "Courier Prime",ui-monospace,monospace;
+background-image:radial-gradient(rgba(90,70,30,.07) 1px,transparent 1px);background-size:5px 5px}
+main{max-width:860px;margin:0 auto;padding:40px 22px 90px}
+h1{font:900 clamp(40px,10vw,92px)/.95 "Playfair Display",Georgia,serif;letter-spacing:-.02em;margin:0;position:relative;display:inline-block}
+h1::after{content:"";position:absolute;left:-2%;top:54%;height:5px;width:104%;background:var(--red);transform:rotate(-1.5deg);border-radius:3px}
+.tag{font:800 clamp(20px,3.4vw,28px) "Playfair Display",Georgia,serif;margin:18px 0 4px}
+.sub{color:var(--mute);margin:0 0 28px}
+.hand{font-family:Caveat,"Bradley Hand",cursive;color:var(--red)}
+textarea{width:100%;min-height:290px;border:1px solid var(--ink);background:#fbf6e9;font:inherit;font-size:15px;padding:16px;resize:vertical;color:var(--ink);box-shadow:3px 3px 0 rgba(0,0,0,.12);
+background-image:linear-gradient(transparent 26px,var(--rule) 27px);background-size:100% 27px;line-height:27px}
+.bar{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;align-items:center}
+button{font:inherit;cursor:pointer;border:1px solid var(--ink);padding:11px 22px;background:transparent;color:var(--ink);transition:transform .08s}
+button:active{transform:translateY(2px)}
+button.pri{background:var(--ink);color:var(--paper);font-weight:700;box-shadow:3px 3px 0 var(--red)}
+button:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.link{border:0;padding:0;text-decoration:underline;color:var(--mute)}
+#err{display:none;border-left:4px solid var(--red);padding:6px 14px;margin:16px 0;background:#fbf6e9}
+#err b{display:block;font:800 20px "Playfair Display",serif}
+#reading{display:none;color:var(--mute)}
+#doc{margin-top:36px;display:none}
+.row{display:grid;grid-template-columns:34px 1fr 150px;gap:10px;padding:9px 0;border-bottom:1px solid var(--rule);opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s,background .6s}
+.row.in{opacity:1;transform:none}
+.n{color:var(--mute);font-size:13px;text-align:right;padding-top:3px}
+.meta{font-size:13px;color:var(--mute)}
+.txt{position:relative;display:inline;transition:color .5s}
+.txt span{position:relative;background:linear-gradient(var(--red),var(--red)) no-repeat 0 55%/0% 3px;transition:background-size .5s ease-out}
+.row.dead .txt span{background-size:100% 3px}
+.row.dead{color:#6d6454}
+.row.noise.in{opacity:.5}
+.note{font:600 21px/1 Caveat,cursive;color:var(--red);opacity:0;transition:opacity .5s;align-self:center;transform:rotate(-2deg)}
+.row.dead .note.show{opacity:1}
+.cur{display:none;color:var(--ok);font-size:12px;margin-left:6px}
+.row.live.settled .cur{display:inline}
+.row.hl{background:#f6d9a0}
+#truth{display:none;margin-top:34px;border:2px solid var(--ink);background:#fbf6e9;padding:26px 28px;box-shadow:6px 6px 0 rgba(0,0,0,.14);transform:rotate(-.4deg);opacity:0;transition:opacity .5s}
+#truth.in{opacity:1}
+#truth h2{font:900 clamp(26px,5vw,40px) "Playfair Display",serif;margin:0 0 14px}
+.fact{display:grid;grid-template-columns:120px 1fr auto;gap:10px;padding:8px 0;border-top:1px solid var(--rule);align-items:baseline}
+.fact .k{color:var(--mute);font-size:14px}
+.fact .v{font:800 24px "Playfair Display",serif}
+.fact a{color:var(--red);font-size:14px;cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--red)}
+.obs{font:600 clamp(26px,5vw,34px) Caveat,cursive;color:var(--red);margin:18px 0 0}
+.foot{margin-top:50px;color:var(--mute);font-size:13px}
+@media(max-width:620px){.row{grid-template-columns:26px 1fr}.note{grid-column:2;margin-top:-4px}.fact{grid-template-columns:90px 1fr auto}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><main>
+<h1>STRIKETHROUGH</h1>
+<p class="tag">Everything they said. What's still true?</p>
+<p class="sub">Paste a conversation. We'll cross out what reality replaced.</p>
+<textarea id="in" spellcheck="false" aria-label="Group chat"></textarea>
+<div class="bar"><button class="pri" id="go">Resolve the chat</button><button id="clear">Clear</button><button class="link" id="paste">Paste your own</button><span id="reading">reading…</span></div>
+<div id="err"><b>Couldn't resolve this conversation.</b>Try again or <button class="link" id="load">load the example</button>.</div>
+<section id="doc" aria-live="polite"></section>
+<section id="truth"></section>
+<p class="foot">Reasoning by Gemma, an open-weight model. Nothing is stored.</p>
+</main>
+<script>
+const SAMPLE=`[9:02 AM] Aisha: Dinner is at The Terrace at 8.
+[9:15 AM] Rahul: Wait, The Terrace said they're full.
+[9:17 AM] Aisha: Okay, moved to Olive House.
+[9:21 AM] Dev: Is that 8:00 or 8:30?
+[9:23 AM] Aisha: 8:30.
+[9:40 AM] Rahul: Olive House just called — 8:30 won't work.
+[9:42 AM] Aisha: Fine, 9 PM then.
+[9:55 AM] Dev: Should I book The Terrace?
+[10:01 AM] Aisha: No, DON'T book The Terrace.
+[10:04 AM] Aisha: FINAL: Olive House, 9 PM. Booking confirmed.
+[10:06 AM] Rahul: Bringing the cake.
+[10:09 AM] Dev: Great.`;
+const L=(id,r)=>({id,status:'live',superseded_by:null,reason:r||''}),S=(id,by,r)=>({id,status:'superseded',superseded_by:by,reason:r}),N=id=>({id,status:'noise',superseded_by:null,reason:''});
+const CACHED={messages:[S(1,3,'Venue changed'),S(2,3,'Venue changed'),L(3),N(4),S(5,7,'Time changed'),N(6),L(7),S(8,9,'Cancelled'),L(9),L(10),L(11),N(12)],
+current:[{topic:'venue',value:'Olive House',source:10},{topic:'time',value:'9:00 PM',source:10},{topic:'booking',value:'Confirmed',source:10},{topic:'cake',value:'Rahul',source:11}]};
+const $=id=>document.getElementById(id),esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>s.replace(/\s+/g,' ').trim();
+function parse(t){const out=[];for(const raw of t.split('\n')){const l=raw.trim();if(!l)continue;
+ let m=l.match(/^\[?(\d{1,2}:\d{2}\s?[AaPp][Mm]?)\]?\s*-?\s*([^:\n]{1,30}):\s*(.+)$/),time='';
+ if(m){time=m[1];}else{m=l.match(/^([^:\[\]]{1,30}):\s*(.+)$/);if(m)m=[0,'',m[1],m[2]]}
+ if(m)out.push({id:out.length+1,time:m[1]||'',speaker:m[2].trim(),text:m[3].trim()});
+ else if(out.length)out[out.length-1].text+=' '+l;}
+ return out}
+$('in').value=SAMPLE;
+$('clear').onclick=()=>{$('in').value='';reset();$('in').focus()};
+$('paste').onclick=()=>{$('in').value='';reset();$('in').focus();$('in').placeholder='Paste your group chat here.\n[9:02 AM] Name: message\nName: message'};
+$('load').onclick=()=>{$('in').value=SAMPLE;$('err').style.display='none'};
+function reset(){$('doc').style.display=$('truth').style.display=$('err').style.display='none';$('doc').innerHTML=''}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+$('go').onclick=async()=>{
+ reset();const msgs=parse($('in').value);if(!msgs.length){$('in').focus();return}
+ $('reading').style.display='inline';$('go').disabled=true;
+ let res;
+ try{ if(norm($('in').value)===norm(SAMPLE)){await wait(700);res=CACHED}
+  else{const r=await fetch('/api/resolve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:msgs})});
+   if(!r.ok)throw 0;res=await r.json();}
+ }catch(e){$('reading').style.display='none';$('go').disabled=false;$('err').style.display='block';return}
+ $('reading').style.display='none';$('go').disabled=false;render(msgs,res)};
+async function render(msgs,res){
+ const by={};res.messages.forEach(m=>by[m.id]=m);
+ const doc=$('doc');doc.style.display='block';
+ doc.innerHTML=msgs.map(m=>{const s=by[m.id]||L(m.id),verb=/cancel|don'?t|no longer/i.test(s.reason)?'Cancelled':'Changed';
+  return `<div class="row ${s.status==='superseded'?'will':''} ${s.status}" id="m${m.id}"><div class="n">${m.id}</div>
+  <div><div class="meta">${esc(m.time)} ${esc(m.speaker)}<span class="cur">● current</span></div><div class="txt"><span>${esc(m.text)}</span></div></div>
+  <div class="note">${s.status==='superseded'?verb+' by #'+s.superseded_by:''}</div></div>`}).join('');
+ doc.scrollIntoView({behavior:'smooth',block:'start'});
+ const rows=[...doc.children];
+ for(const r of rows){r.classList.add('in');await wait(90)}
+ await wait(250);
+ const dead=rows.filter(r=>r.classList.contains('will'));
+ for(const r of dead){r.classList.add('dead');await wait(200)}
+ await wait(250);rows.forEach(r=>{const n=r.querySelector('.note');if(n)n.classList.add('show');r.classList.add('settled')});
+ await wait(350);
+ const T=$('truth');
+ const last=res.current.reduce((a,c)=>Math.max(a,c.source),0),lm=msgs.find(m=>m.id===last);
+ T.innerHTML=`<h2>Current reality</h2>`+res.current.map(c=>`<div class="fact"><span class="k">${esc(c.topic)}</span><span class="v">${esc(c.value)}</span><a data-s="${c.source}" tabindex="0">#${c.source}</a></div>`).join('')
+  +(lm&&lm.time?`<div class="fact"><span class="k">last confirmed</span><span class="v">${esc(lm.time)}</span><a data-s="${last}" tabindex="0">#${last}</a></div>`:'')
+  +`<p class="obs">${dead.length} message${dead.length===1?'':'s'} became obsolete.</p>`;
+ T.style.display='block';requestAnimationFrame(()=>T.classList.add('in'));
+ T.scrollIntoView({behavior:'smooth',block:'center'});
+ T.querySelectorAll('a').forEach(a=>{const go=()=>{const r=$('m'+a.dataset.s);r.scrollIntoView({behavior:'smooth',block:'center'});r.classList.add('hl');setTimeout(()=>r.classList.remove('hl'),1600)};a.onclick=go;a.onkeydown=e=>{if(e.key==='Enter')go()}});
+}
+</script></body></html>
